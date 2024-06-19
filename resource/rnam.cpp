@@ -1,12 +1,29 @@
 #include "RNAM.h"
 #include<chrono>
 
-RNAM::RNAM():encodeTime(0),decodeTime(0),blockNum(0), BPPValue(0), CRValue(0), PSNRValue(0)
+RNAM::RNAM():rnam_dao_object(new rnamDao())
+{}
+
+RNAM::~RNAM()
 {
+    if(rnam_dao_object!=nullptr)
+    {
+        delete rnam_dao_object;
+        rnam_dao_object = nullptr;
+    }
 }
 
 void RNAM::do_RNAM(const cv::Mat& imgOrigin, double epsilon,RNAM::segMethod method)
 {
+    int blockNum = 0;//块数
+    cv::Mat segImg;//分割结果S
+    cv::Mat compressedImg;//解码结果
+    double encodeTime = 0;//单位：ms
+    double decodeTime = 0;//单位：ms
+    double PSNRValue = 0;//PSNR
+    double BPPValue = 0;//BPP
+    double CRValue = 0;
+
     if (imgOrigin.empty())
     {
         return;
@@ -57,6 +74,15 @@ void RNAM::do_RNAM(const cv::Mat& imgOrigin, double epsilon,RNAM::segMethod meth
     /*分割图*/
     segImg = cv::Mat(img_rows, img_cols, CV_8UC1, cv::Scalar::all(255));
     segmentDisplay(segImg, colorList);
+
+    rnam_dao_object->setBlockNum(blockNum);
+    rnam_dao_object->setBPPValue(BPPValue);
+    rnam_dao_object->setCompressedImg(compressedImg);
+    rnam_dao_object->setCRValue(CRValue);
+    rnam_dao_object->setDecodeTime(decodeTime);
+    rnam_dao_object->setEncodeTime(encodeTime);
+    rnam_dao_object->setPSNRValue(PSNRValue);
+    rnam_dao_object->setSegImg(segImg);
 }
 
 //使用改良isSameBlock阴影法判断是否同类块
@@ -466,17 +492,48 @@ void RNAM::segmentDisplay(cv::Mat& display, std::vector<Color> p)
 
 void RNAM::clear()
 {
-    encodeTime = 0;
-    decodeTime = 0;
-    blockNum =0;
-    BPPValue = 0;
-    PSNRValue = 0;
-    CRValue = 0;
-
-    segImg.release();
-    compressedImg.release();
+    rnam_dao_object->clear();
 }
 
+int RNAM::getBlockNum()
+{
+    return rnam_dao_object->getBlockNum();
+}
+
+cv::Mat RNAM::getSegImg()
+{
+    return rnam_dao_object->getSegImg();
+}
+
+cv::Mat RNAM::getCompressedImg()
+{
+    return rnam_dao_object->getCompressedImg();
+}
+
+double RNAM::getEncodeTime()
+{
+    return rnam_dao_object->getEncodeTime();
+}
+
+double RNAM::getDecodeTime()
+{
+    return rnam_dao_object->getDecodeTime();
+}
+
+double RNAM::getPSNRValue()
+{
+    return rnam_dao_object->getPSNRValue();
+}
+
+double RNAM::getBPPValue()
+{
+    return rnam_dao_object->getBPPValue();
+}
+
+double RNAM::getCRValue()
+{
+    return rnam_dao_object->getCRValue();
+}
 
 
 

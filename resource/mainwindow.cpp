@@ -250,10 +250,10 @@ void MainWindow::doAdaptiveActionsTriggered()
     }
 
     displayImgInLabel(m_image,ui->lblImgOrigin,method);
-    displayImgInLabel(cvMatToQPixmap(stcObject->compressedImg),ui->lbl_STC_compression,method);
-    displayImgInLabel(cvMatToQPixmap(stcObject->segImg),ui->lbl_STC_segmentation,method);
-    displayImgInLabel(cvMatToQPixmap(rnamObject->compressedImg),ui->lbl_RNAM_compression,method);
-    displayImgInLabel(cvMatToQPixmap(rnamObject->segImg),ui->lbl_RNAM_segmentation,method);
+    displayImgInLabel(cvMatToQPixmap(stcObject->getCompressedImg()),ui->lbl_STC_compression,method);
+    displayImgInLabel(cvMatToQPixmap(stcObject->getSegImg()),ui->lbl_STC_segmentation,method);
+    displayImgInLabel(cvMatToQPixmap(rnamObject->getCompressedImg()),ui->lbl_RNAM_compression,method);
+    displayImgInLabel(cvMatToQPixmap(rnamObject->getSegImg()),ui->lbl_RNAM_segmentation,method);
 }
 
 void MainWindow::on_inputAction_triggered()
@@ -365,10 +365,10 @@ void MainWindow::on_startAction_triggered()
 
     //显示图片
     displayOptions display_method = displayOptions::Adaptive;
-    displayImgInLabel(cvMatToQPixmap(stcObject->compressedImg),ui->lbl_STC_compression,display_method);
-    displayImgInLabel(cvMatToQPixmap(stcObject->segImg),ui->lbl_STC_segmentation,display_method);
-    displayImgInLabel(cvMatToQPixmap(rnamObject->compressedImg),ui->lbl_RNAM_compression,display_method);
-    displayImgInLabel(cvMatToQPixmap(rnamObject->segImg),ui->lbl_RNAM_segmentation,display_method);
+    displayImgInLabel(cvMatToQPixmap(stcObject->getCompressedImg()),ui->lbl_STC_compression,display_method);
+    displayImgInLabel(cvMatToQPixmap(stcObject->getSegImg()),ui->lbl_STC_segmentation,display_method);
+    displayImgInLabel(cvMatToQPixmap(rnamObject->getCompressedImg()),ui->lbl_RNAM_compression,display_method);
+    displayImgInLabel(cvMatToQPixmap(rnamObject->getSegImg()),ui->lbl_RNAM_segmentation,display_method);
 
     //打印信息
     ui->textEdit->append("==========info==========");
@@ -376,21 +376,21 @@ void MainWindow::on_startAction_triggered()
     ui->textEdit->append("STC---------->");
     QString stc_info = QString("同类块阈值：%1\n编码时间：%2 ms\n解码时间：%3 ms\n块数：%4\nPSNR：%5\nBPP：%6")
                            .arg(stc_epsilon)
-                           .arg(stcObject->encodeTime)
-                           .arg(stcObject->decodeTime)
-                           .arg(stcObject->blockNum)
-                           .arg(stcObject->PSNRValue)
-                           .arg(stcObject->BPPValue);
+                           .arg(stcObject->getEncodeTime())
+                           .arg(stcObject->getDecodeTime())
+                           .arg(stcObject->getBlockNum())
+                           .arg(stcObject->getPSNRValue())
+                           .arg(stcObject->getBPPValue());
     ui->textEdit->append(stc_info);
     ui->textEdit->append("RNAM---------->");
     QString rnam_info = QString("同类块阈值：%1\n编码时间：%2 ms\n解码时间：%3 ms\n块数：%4\nPSNR：%5\nBPP：%6\nCR：%7")
                            .arg(rnam_epsilon)
-                           .arg(rnamObject->encodeTime)
-                           .arg(rnamObject->decodeTime)
-                           .arg(rnamObject->blockNum)
-                           .arg(rnamObject->PSNRValue)
-                           .arg(rnamObject->BPPValue)
-                            .arg(rnamObject->CRValue);
+                           .arg(rnamObject->getEncodeTime())
+                           .arg(rnamObject->getDecodeTime())
+                           .arg(rnamObject->getBlockNum())
+                           .arg(rnamObject->getPSNRValue())
+                           .arg(rnamObject->getBPPValue())
+                            .arg(rnamObject->getCRValue());
     ui->textEdit->append(rnam_info);
     ui->textEdit->append("========================\n");
 
@@ -415,10 +415,10 @@ void MainWindow::on_outputAction_triggered()
     }
 
     QList<QPixmap>pixmapsList = {
-        cvMatToQPixmap(stcObject->compressedImg),
-        cvMatToQPixmap(stcObject->segImg),
-        cvMatToQPixmap(rnamObject->compressedImg),
-        cvMatToQPixmap(rnamObject->segImg)};
+        cvMatToQPixmap(stcObject->getCompressedImg()),
+        cvMatToQPixmap(stcObject->getSegImg()),
+        cvMatToQPixmap(rnamObject->getCompressedImg()),
+        cvMatToQPixmap(rnamObject->getSegImg())};
     QList<QString>fileNames={"STC_compression.png",
                                 "STC_segmentation.png",
                                 "RNAM_compression.png",

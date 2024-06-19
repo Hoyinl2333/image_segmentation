@@ -1,7 +1,9 @@
 #ifndef RNAM_H
 #define RNAM_H
 
-#include<opencv2/opencv.hpp>
+/*业务逻辑层*/
+
+#include"rnamDao.h"
 
 //颜色表
 class Color
@@ -22,21 +24,16 @@ public:
 class RNAM
 {
 public:
-    double encodeTime;//单位：ms
-    double decodeTime;//单位：ms
-    int blockNum;//块数
-    cv::Mat segImg;//分割图
-    cv::Mat compressedImg;//压缩灰度图
-    double BPPValue;
-    double PSNRValue;
-    double CRValue;
+    rnamDao*rnam_dao_object;//连接数据访问层
 
-    enum class segMethod{Diagonal};
+    enum class segMethod{Diagonal};//分割方法
 public:
     RNAM();
+    ~RNAM();
 
-    void do_RNAM(const cv::Mat& imgOrigin,double epsilon,RNAM::segMethod method);
+    void do_RNAM(const cv::Mat& imgOrigin,double epsilon,RNAM::segMethod method);//实现函数
 
+    //以下是do_RNAM的辅助代码
     bool isSameBlock(cv::Mat f, cv::Mat mark, cv::Point lt, cv::Point rb, int xgm);
     void mark(cv::Mat& mark, cv::Point lt, cv::Point rb);
     void EnCode(cv::Mat& R, int height, int width, std::vector<char>& Q);
@@ -49,7 +46,17 @@ public:
     double BPP(std::vector<Color> p, int M, int N, std::vector<char> q);
     void segmentDisplay(cv::Mat& display, std::vector<Color> p);
 
-    void clear();
+    void clear();//清理
+
+    //传出
+    int getBlockNum();
+    cv::Mat getSegImg();
+    cv::Mat getCompressedImg();
+    double getEncodeTime();
+    double getDecodeTime();
+    double getPSNRValue();
+    double getBPPValue();
+    double getCRValue();
 
 };
 #endif // RNAM_H

@@ -12,13 +12,17 @@ SOURCES += \
     main.cpp \
     mainwindow.cpp\
     rnam.cpp \
-    stc.cpp
+    rnamDao.cpp \
+    stc.cpp \
+    stcDao.cpp
 
 
 HEADERS += \
     mainwindow.h\
     rnam.h \
-    stc.h
+    rnamDao.h \
+    stc.h \
+    stcDao.h
 
 FORMS += \
     mainwindow.ui

@@ -1,8 +1,18 @@
 #include "STC.h"
 #include<chrono>
 
-STC::STC() :buildTree_callCount(0), blockNum(0), encodeTime(0), decodeTime(0), PSNRValue(0), BPPValue(0)
+STC::STC() :stc_dao_object(new stcDao())
 {
+}
+
+STC::~STC()
+{
+    clear();
+    if(stc_dao_object!=NULL)
+    {
+        delete stc_dao_object;
+        stc_dao_object=nullptr;
+    }
 }
 
 void STC::do_stc(cv::Mat imgOrigin, double homoThres, STC::segMethod method)
@@ -10,14 +20,21 @@ void STC::do_stc(cv::Mat imgOrigin, double homoThres, STC::segMethod method)
 
     /*预处理*/
 
+    buildTree_callCount = 0;
+    int blockNum = 0;//块数
+    cv::Mat segImg;//分割结果S
+    cv::Mat compressedImg;//解码结果
+    double encodeTime = 0;//单位：ms
+    double decodeTime = 0;//单位：ms
+    double PSNRValue = 0;//PSNR
+    double BPPValue = 0;//BPP
+
     //初始化变量
     cv::Mat img_gray;
 
     //转换为单通道灰度图
     cv::cvtColor(imgOrigin, img_gray, cv::COLOR_BGR2GRAY);
 
-    blockNum = 0;
-    buildTree_callCount = 0;
 
     int img_rows = img_gray.rows;
     int img_cols = img_gray.cols;
@@ -29,7 +46,7 @@ void STC::do_stc(cv::Mat imgOrigin, double homoThres, STC::segMethod method)
     /*编码过程*/
     auto start = std::chrono::high_resolution_clock::now();
 
-    buildTree(img_gray, root, cv::Vec4i(0, 0, img_rows - 1, img_cols - 1), homoThres, method);
+    buildTree(img_gray, root, cv::Vec4i(0, 0, img_rows - 1, img_cols - 1), homoThres, method,segImg,blockNum);
 
     auto end = std::chrono::high_resolution_clock::now();
     auto encode_duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
@@ -40,7 +57,7 @@ void STC::do_stc(cv::Mat imgOrigin, double homoThres, STC::segMethod method)
     compressedImg = cv::Mat::zeros(img_gray.size(), CV_8UC1);
     start = std::chrono::high_resolution_clock::now();
 
-    decode(img_gray);
+    decode(img_gray,compressedImg);
 
     end = std::chrono::high_resolution_clock::now();
     auto decode_duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
@@ -61,12 +78,18 @@ void STC::do_stc(cv::Mat imgOrigin, double homoThres, STC::segMethod method)
     /*计算BPP*/
     BPPValue = (buildTree_callCount + 32.0 * P.size()) / (img_gray.rows * img_gray.cols);
 
-    ///*后处理*/
-    //C.clear();
-    //P.clear();
+    /*后处理*/
+    stc_dao_object->setBlockNum(blockNum);
+    stc_dao_object->setBPPValue(BPPValue);
+    stc_dao_object->setCompressedImg(compressedImg);
+    stc_dao_object->setSegImg(segImg);
+    stc_dao_object->setDecodeTime(decodeTime);
+    stc_dao_object->setEncodeTime(encodeTime);
+    stc_dao_object->setPSNRValue(PSNRValue);
 }
 
-void STC::buildTree(cv::Mat img, TreeNode* root, cv::Vec4i area, double epsilon,  STC::segMethod method)
+void STC::buildTree(cv::Mat img, TreeNode* root, cv::Vec4i area, double epsilon,  STC::segMethod method,
+                    cv::Mat&segImg,int&blockNum)
 {
     ++buildTree_callCount;
     root->insert();//插入两个分支叶节点
@@ -87,18 +110,19 @@ void STC::buildTree(cv::Mat img, TreeNode* root, cv::Vec4i area, double epsilon,
             root->nwchild = NULL;
 
             //绘图
-            protractSegImg(img, area);
+            protractSegImg(img, area,segImg,blockNum);
             return;
         }
         //上半部分nwchild
         if (isSameBlock(img, cv::Vec4i(x1, y1, (x1 + x2 - 1) / 2, y2),epsilon))
         {
             root->nwchild->confirm = 1;
-            protractSegImg(img, cv::Vec4i(x1, y1, (x1 + x2 - 1) / 2, y2));
+            protractSegImg(img, cv::Vec4i(x1, y1, (x1 + x2 - 1) / 2, y2),segImg,blockNum);
         }
         else
         {
-            buildTree(img, root->nwchild, cv::Vec4i(x1, y1, (x1 + x2 - 1) / 2, y2), epsilon, STC::segMethod::Vertical);
+            buildTree(img, root->nwchild, cv::Vec4i(x1, y1, (x1 + x2 - 1) / 2, y2), epsilon, STC::segMethod::Vertical,
+                      segImg,blockNum);
             //stc_buildTree(img, S, root->nwchild, x1, y1, (x1 + x2 - 1) / 2, y2, 0);
         }
 
@@ -106,12 +130,13 @@ void STC::buildTree(cv::Mat img, TreeNode* root, cv::Vec4i area, double epsilon,
         if (isSameBlock(img, cv::Vec4i((x1 + x2 + 1) / 2, y1, x2, y2),epsilon))
         {
             root->nechild->confirm = 1;
-            protractSegImg(img, cv::Vec4i((x1 + x2 + 1) / 2, y1, x2, y2));
+            protractSegImg(img, cv::Vec4i((x1 + x2 + 1) / 2, y1, x2, y2),segImg,blockNum);
             //stc_record(img, S, (x1 + x2 + 1) / 2, y1, x2, y2);
         }
         else
         {
-            buildTree(img, root->nechild, cv::Vec4i((x1 + x2 + 1) / 2, y1, x2, y2), epsilon, STC::segMethod::Vertical);
+            buildTree(img, root->nechild, cv::Vec4i((x1 + x2 + 1) / 2, y1, x2, y2), epsilon, STC::segMethod::Vertical,
+                      segImg,blockNum);
             //stc_buildTree(img, S, root->nechild, (x1 + x2 + 1) / 2, y1, x2, y2, 0);
         }
         break;
@@ -125,7 +150,7 @@ void STC::buildTree(cv::Mat img, TreeNode* root, cv::Vec4i area, double epsilon,
             root->nechild = NULL;
             delete root->nwchild;
             root->nwchild = NULL;
-            protractSegImg(img, area);
+            protractSegImg(img, area,segImg,blockNum);
             //stc_record(img, S, x1, y1, x2, y2);
             return;
         }
@@ -133,24 +158,26 @@ void STC::buildTree(cv::Mat img, TreeNode* root, cv::Vec4i area, double epsilon,
         if (isSameBlock(img, cv::Vec4i(x1, y1, x2,(y1 + y2 - 1) / 2),epsilon))
         {
             root->nwchild->confirm = 1;
-            protractSegImg(img, cv::Vec4i(x1, y1, x2, (y1 + y2 - 1) / 2));
+            protractSegImg(img, cv::Vec4i(x1, y1, x2, (y1 + y2 - 1) / 2),segImg,blockNum);
             //stc_record(img, S, x1, y1, x2, (y1 + y2 - 1) / 2);
         }
         else
         {
-            buildTree(img, root->nwchild, cv::Vec4i(x1, y1, x2, (y1 + y2 - 1) / 2), epsilon, STC::segMethod::Horizonal);
+            buildTree(img, root->nwchild, cv::Vec4i(x1, y1, x2, (y1 + y2 - 1) / 2), epsilon, STC::segMethod::Horizonal,
+                      segImg,blockNum);
             //stc_buildTree(img, S, root->nwchild, x1, y1, x2, (y1 + y2 - 1) / 2, 1);
         }
         //右半部分nechild
         if (isSameBlock(img, cv::Vec4i(x1, (y1 + y2 + 1) / 2, x2, y2),epsilon))
         {
             root->nechild->confirm = 1;
-            protractSegImg(img, cv::Vec4i(x1, (y1 + y2 + 1) / 2, x2, y2));
+            protractSegImg(img, cv::Vec4i(x1, (y1 + y2 + 1) / 2, x2, y2),segImg,blockNum);
             //stc_record(img, S, x1, (y1 + y2 + 1) / 2, x2, y2);
         }
         else
         {
-            buildTree(img, root->nechild, cv::Vec4i(x1, (y1 + y2 + 1) / 2, x2, y2), epsilon, STC::segMethod::Horizonal);
+            buildTree(img, root->nechild, cv::Vec4i(x1, (y1 + y2 + 1) / 2, x2, y2), epsilon, STC::segMethod::Horizonal,
+                      segImg,blockNum);
             //stc_buildTree(img, S, root->nechild, x1, (y1 + y2 + 1) / 2, x2, y2, 1);
         }
         break;
@@ -196,7 +223,7 @@ bool STC::isSameBlock(cv::Mat img, cv::Vec4i area, double epsilon)
     return true;
 }
 
-void STC::protractSegImg(cv::Mat img,cv::Vec4i area)
+void STC::protractSegImg(cv::Mat img,cv::Vec4i area,cv::Mat& segImg,int&blockNum)
 {
     int x1 = area[0];
     int y1 = area[1];
@@ -226,7 +253,7 @@ void STC::protractSegImg(cv::Mat img,cv::Vec4i area)
     return;
 }
 
-void STC::decode(cv::Mat img)
+void STC::decode(cv::Mat img,cv::Mat&compressedImg)
 {
     for (const auto& area :C)
     {
@@ -253,20 +280,50 @@ void STC::decode(cv::Mat img)
     }
 }
 
+int STC::getBlockNum()
+{
+    return stc_dao_object->getBlockNum();
+}
+
+cv::Mat STC::getSegImg()
+{
+    return stc_dao_object->getSegImg();
+}
+
+cv::Mat STC::getCompressedImg()
+{
+    return stc_dao_object->getCompressedImg();
+}
+
+double STC::getEncodeTime()
+{
+    return stc_dao_object->getEncodeTime();
+}
+
+double STC::getDecodeTime()
+{
+    return stc_dao_object->getDecodeTime();
+}
+
+double STC::getPSNRValue()
+{
+    return stc_dao_object->getPSNRValue();
+}
+
+double STC::getBPPValue()
+{
+    return stc_dao_object->getBPPValue();
+}
+
 void STC::clear()
 {
+    if(stc_dao_object!=NULL)
+    {
+        stc_dao_object->clear();
+    }
+    buildTree_callCount = 0;
     P.clear();
     C.clear();
-
-    buildTree_callCount =0;
-    blockNum =0;
-    encodeTime =0;
-    decodeTime = 0;
-    BPPValue = 0;
-    PSNRValue = 0;
-
-    segImg.release();
-    compressedImg.release();
 }
 
 
