@@ -1,3 +1,5 @@
+/*rnam.cpp*/
+
 #include "RNAM.h"
 #include<chrono>
 

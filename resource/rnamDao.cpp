@@ -1,3 +1,5 @@
+/*rnamDao.cpp*/
+
 #include "rnamDao.h"
 
 rnamDao::rnamDao():blockNum(0),encodeTime(0),decodeTime(0),PSNRValue(0),BPPValue(0),CRValue(0)

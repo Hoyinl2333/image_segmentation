@@ -1,6 +1,6 @@
+/*stcDao.cpp*/
+
 #include "stcDao.h"
-
-
 
 stcDao::stcDao():blockNum(0),encodeTime(0),decodeTime(0),PSNRValue(0),BPPValue(0)
 {}

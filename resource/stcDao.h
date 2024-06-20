@@ -1,3 +1,5 @@
+/*stcDao.h*/
+
 #ifndef STCDAO_H
 #define STCDAO_H
 

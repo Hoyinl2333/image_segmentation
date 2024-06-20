@@ -1,3 +1,5 @@
+/*mainwindow.cpp*/
+
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include"stc.h"
@@ -290,7 +292,7 @@ void MainWindow::on_inputAction_triggered()
     //显示文件名
     QFileInfo fileInfo(imgDir);
     QString fileName = fileInfo.fileName();
-    statusBarLabel->setText("文件名：" + fileName);
+    statusBarLabel->setText(fileName);
 
     //显示图片
     displayImgInLabel(m_image,ui->lblImgOrigin,displayOptions::Adaptive);
@@ -372,7 +374,7 @@ void MainWindow::on_startAction_triggered()
 
     //打印信息
     ui->textEdit->append("==========info==========");
-    ui->textEdit->append("图片名称："+statusBarLabel->text());
+    ui->textEdit->append("文件名："+statusBarLabel->text());
     ui->textEdit->append("STC---------->");
     QString stc_info = QString("同类块阈值：%1\n编码时间：%2 ms\n解码时间：%3 ms\n块数：%4\nPSNR：%5\nBPP：%6")
                            .arg(stc_epsilon)

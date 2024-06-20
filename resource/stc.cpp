@@ -1,3 +1,5 @@
+/*stc.cpp*/
+
 #include "STC.h"
 #include<chrono>
 
@@ -123,7 +125,6 @@ void STC::buildTree(cv::Mat img, TreeNode* root, cv::Vec4i area, double epsilon,
         {
             buildTree(img, root->nwchild, cv::Vec4i(x1, y1, (x1 + x2 - 1) / 2, y2), epsilon, STC::segMethod::Vertical,
                       segImg,blockNum);
-            //stc_buildTree(img, S, root->nwchild, x1, y1, (x1 + x2 - 1) / 2, y2, 0);
         }
 
         //下半部分nechild
@@ -131,13 +132,11 @@ void STC::buildTree(cv::Mat img, TreeNode* root, cv::Vec4i area, double epsilon,
         {
             root->nechild->confirm = 1;
             protractSegImg(img, cv::Vec4i((x1 + x2 + 1) / 2, y1, x2, y2),segImg,blockNum);
-            //stc_record(img, S, (x1 + x2 + 1) / 2, y1, x2, y2);
         }
         else
         {
             buildTree(img, root->nechild, cv::Vec4i((x1 + x2 + 1) / 2, y1, x2, y2), epsilon, STC::segMethod::Vertical,
                       segImg,blockNum);
-            //stc_buildTree(img, S, root->nechild, (x1 + x2 + 1) / 2, y1, x2, y2, 0);
         }
         break;
     }
@@ -151,7 +150,6 @@ void STC::buildTree(cv::Mat img, TreeNode* root, cv::Vec4i area, double epsilon,
             delete root->nwchild;
             root->nwchild = NULL;
             protractSegImg(img, area,segImg,blockNum);
-            //stc_record(img, S, x1, y1, x2, y2);
             return;
         }
         //左半部分nwchild
@@ -159,26 +157,22 @@ void STC::buildTree(cv::Mat img, TreeNode* root, cv::Vec4i area, double epsilon,
         {
             root->nwchild->confirm = 1;
             protractSegImg(img, cv::Vec4i(x1, y1, x2, (y1 + y2 - 1) / 2),segImg,blockNum);
-            //stc_record(img, S, x1, y1, x2, (y1 + y2 - 1) / 2);
         }
         else
         {
             buildTree(img, root->nwchild, cv::Vec4i(x1, y1, x2, (y1 + y2 - 1) / 2), epsilon, STC::segMethod::Horizonal,
                       segImg,blockNum);
-            //stc_buildTree(img, S, root->nwchild, x1, y1, x2, (y1 + y2 - 1) / 2, 1);
         }
         //右半部分nechild
         if (isSameBlock(img, cv::Vec4i(x1, (y1 + y2 + 1) / 2, x2, y2),epsilon))
         {
             root->nechild->confirm = 1;
             protractSegImg(img, cv::Vec4i(x1, (y1 + y2 + 1) / 2, x2, y2),segImg,blockNum);
-            //stc_record(img, S, x1, (y1 + y2 + 1) / 2, x2, y2);
         }
         else
         {
             buildTree(img, root->nechild, cv::Vec4i(x1, (y1 + y2 + 1) / 2, x2, y2), epsilon, STC::segMethod::Horizonal,
                       segImg,blockNum);
-            //stc_buildTree(img, S, root->nechild, x1, (y1 + y2 + 1) / 2, x2, y2, 1);
         }
         break;
     }
@@ -243,13 +237,6 @@ void STC::protractSegImg(cv::Mat img,cv::Vec4i area,cv::Mat& segImg,int&blockNum
         segImg.at<uchar>(x2,y) = 0;
     }
     ++blockNum;
-    /*if (blockNum < 500)
-    {
-        cv::imshow("apic", segImg);
-        cv::waitKey(1);
-    }
-    //for test
-    */
     return;
 }
 

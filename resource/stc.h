@@ -1,3 +1,5 @@
+/*stc.h*/
+
 #ifndef STC_H
 #define STC_H
 

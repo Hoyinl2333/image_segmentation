@@ -1,3 +1,5 @@
+/*rnam.h*/
+
 #ifndef RNAM_H
 #define RNAM_H
 
